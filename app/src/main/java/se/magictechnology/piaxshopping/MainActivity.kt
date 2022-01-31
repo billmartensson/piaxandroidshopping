@@ -3,31 +3,52 @@ package se.magictechnology.piaxshopping
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.ValueEventListener
+import com.google.firebase.database.*
 import com.google.firebase.database.ktx.database
 import com.google.firebase.database.ktx.getValue
 import com.google.firebase.ktx.Firebase
 
+
+@IgnoreExtraProperties
+data class Shopitem(val shoptitle: String? = null, val shopamount: Int? = null) {
+    // Null default values create a no-argument default constructor, which is needed
+    // for deserialization from a DataSnapshot.
+}
+
 class MainActivity : AppCompatActivity() {
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        val database = Firebase.database
-        val myRef = database.getReference("piaxandroid")
+    }
+}
+
+
+/*
+private lateinit var database: DatabaseReference
+
+database = Firebase.database("https://piax-acf23-default-rtdb.europe-west1.firebasedatabase.app").reference
+
+        val myRef = database.child("piaxandroid")
 
         myRef.setValue("Hurra det funkar")
 
+        val shopRef = database.child("androidshopping")
 
+        val buything = Shopitem("Apelsin", 5)
+
+        //shopRef.push().setValue(buything)
+
+        /*
         // Read from the database
-        myRef.addValueEventListener(object : ValueEventListener {
+        shopRef.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(dataSnapshot: DataSnapshot) {
                 // This method is called once with the initial value and again
                 // whenever data at this location is updated.
-                val value = dataSnapshot.getValue<String>()
-                Log.d("piaxdebug", "Value is: $value")
+                val value = dataSnapshot.getValue<Shopitem>()
+
+                Log.d("piaxdebug", "Value is: ${value!!.shoptitle}")
             }
 
             override fun onCancelled(error: DatabaseError) {
@@ -35,5 +56,22 @@ class MainActivity : AppCompatActivity() {
                 Log.w("piaxdebug", "Failed to read value.", error.toException())
             }
         })
-    }
-}
+*/
+
+        shopRef.get().addOnSuccessListener {
+
+            var myshoppinglist = mutableListOf<Shopitem>()
+            for(childsnap in it.children) {
+                val someitem = childsnap.getValue<Shopitem>()
+                myshoppinglist.add(someitem!!)
+                Log.d("piaxdebug", "Get Value is: ${someitem!!.shoptitle}")
+
+            }
+
+
+
+        }
+
+
+
+ */
