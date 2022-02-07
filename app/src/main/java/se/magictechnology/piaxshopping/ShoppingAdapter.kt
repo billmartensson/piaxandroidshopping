@@ -17,12 +17,17 @@ class ShoppingAdapter() : RecyclerView.Adapter<ShoppingViewHolder>() {
     }
 
     override fun getItemCount(): Int {
-        return shopfrag.shopitems.size
+
+        shopfrag.model.shopitems.value?.let {
+            return it.size
+        }
+
+        return 0
     }
 
     override fun onBindViewHolder(holder: ShoppingViewHolder, position: Int) {
 
-        var currentItem = shopfrag.shopitems[position]
+        var currentItem = shopfrag.model.shopitems.value!![position]
 
         holder.titleTextview.text = currentItem.shoptitle
         holder.amountTextview.text = currentItem.shopamount.toString()

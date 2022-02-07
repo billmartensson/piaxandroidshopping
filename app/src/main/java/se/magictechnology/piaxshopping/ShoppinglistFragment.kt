@@ -8,6 +8,10 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.EditText
+import android.widget.TextView
+import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.firebase.database.DatabaseReference
@@ -17,18 +21,19 @@ import com.google.firebase.ktx.Firebase
 
 class ShoppinglistFragment : Fragment() {
 
-    private lateinit var database: DatabaseReference
-
     var shopadapter = ShoppingAdapter()
-    var shopitems = mutableListOf<Shopitem>()
+
+    val model : ShoppinglistViewModel by activityViewModels()
+
+    lateinit var loadingview : ConstraintLayout
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         shopadapter.shopfrag = this
-        database = Firebase.database("https://piax-acf23-default-rtdb.europe-west1.firebasedatabase.app").reference
 
-        loadShopping()
+        model.database = Firebase.database("https://piax-acf23-default-rtdb.europe-west1.firebasedatabase.app").reference
+
     }
 
     override fun onCreateView(
@@ -42,57 +47,46 @@ class ShoppinglistFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        loadingview = view.findViewById(R.id.loadingView)
+
         var recview = view.findViewById<RecyclerView>(R.id.shoppinglistRV)
 
         recview.layoutManager = LinearLayoutManager(requireContext())
         recview.adapter = shopadapter
+
+        val shopObserver = Observer<List<Shopitem>> {
+            shopadapter.notifyDataSetChanged()
+            loadingview.visibility = View.GONE
+        }
+
+        model.shopitems.observe(this, shopObserver)
+
+        loadingview.visibility = View.VISIBLE
+        model.loadShopping()
+
 
         view.findViewById<Button>(R.id.shoppinglistAddBtn).setOnClickListener {
             val shoptitle = view.findViewById<EditText>(R.id.shoppinglistAddTitleET).text.toString()
             val shopamount = view.findViewById<EditText>(R.id.shoppinglistAddAmountET).text.toString()
 
             // TODO: Kolla så det är siffra
-            val saveshop = Shopitem(shoptitle, shopamount.toInt())
+            if(shopamount.toIntOrNull() == null)
+            {
+                // VISA ERROR ALERT
+            } else {
+                val shopamountNumber = shopamount.toInt()
 
-            val shopref = database.child("androidshopping").push()
-            shopref.setValue(saveshop)
-
-            loadShopping()
-        }
-    }
-
-    fun loadShopping()
-    {
-        Log.i("piaxdebug", "** LOAD SHOPPING **")
-        database.child("androidshopping").get().addOnSuccessListener {
-            shopitems.clear()
-            for(snapchild in it.children) {
-                var tempshop = snapchild.getValue<Shopitem>()!!
-                tempshop.fbid = snapchild.key!!
-                Log.i("piaxdebug", tempshop!!.shoptitle!!)
-
-                shopitems.add(tempshop)
-
+                loadingview.visibility = View.VISIBLE
+                model.addShopping(shoptitle, shopamountNumber)
             }
-            shopadapter.notifyDataSetChanged()
+
         }
     }
 
     fun clickrow(rownumber : Int)
     {
-        var currentitem = shopitems[rownumber]
-
-        if(currentitem.shopdone == true)
-        {
-            currentitem.shopdone = false
-        } else {
-            currentitem.shopdone = true
-        }
-
-        val shopref = database.child("androidshopping").child(currentitem.fbid)
-        shopref.setValue(currentitem)
-
-        loadShopping()
+        loadingview.visibility = View.VISIBLE
+        model.toggleDone(rownumber)
     }
 
 }
